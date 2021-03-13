@@ -11,6 +11,7 @@ module CRDT.LWWElementSet exposing
     , toSet
     )
 
+import Dict
 import Json.Decode
 import Json.Encode
 import Set
@@ -18,34 +19,76 @@ import Time
 
 
 type LWWElementSet comparable
-    = LWWElementSet (List ( Time.Posix, comparable )) (List ( Time.Posix, comparable ))
+    = LWWElementSet (Dict.Dict comparable Time.Posix) (Dict.Dict comparable Time.Posix)
 
 
 empty : LWWElementSet comparable
 empty =
-    LWWElementSet [] []
+    LWWElementSet Dict.empty Dict.empty
+
+
+update : comparable -> Time.Posix -> Dict.Dict comparable Time.Posix -> Dict.Dict comparable Time.Posix
+update element now =
+    Dict.update element
+        (\t ->
+            case t of
+                Just tt ->
+                    if Time.posixToMillis now > Time.posixToMillis tt then
+                        Just now
+
+                    else
+                        t
+
+                Nothing ->
+                    Just now
+        )
 
 
 insert : comparable -> Time.Posix -> LWWElementSet comparable -> LWWElementSet comparable
 insert element now (LWWElementSet a r) =
-    LWWElementSet (List.append [ ( now, element ) ] a) r
+    LWWElementSet (update element now a) r
 
 
 remove : comparable -> Time.Posix -> LWWElementSet comparable -> LWWElementSet comparable
 remove element now (LWWElementSet a r) =
-    LWWElementSet a (List.append [ ( now, element ) ] r)
+    LWWElementSet a (update element now r)
 
 
 member : comparable -> LWWElementSet comparable -> Bool
 member element (LWWElementSet a r) =
-    List.any (\( t, v ) -> v == element && not (List.any (\( t2, v2 ) -> v2 == element && Time.posixToMillis t2 > Time.posixToMillis t) r)) a
+    case ( Dict.get element a, Dict.get element r ) of
+        ( Just t, Nothing ) ->
+            True
+
+        ( Nothing, Just t ) ->
+            False
+
+        ( Just t1, Just t2 ) ->
+            Time.posixToMillis t1 > Time.posixToMillis t2
+
+        ( Nothing, Nothing ) ->
+            False
 
 
 merge : LWWElementSet comparable -> LWWElementSet comparable -> LWWElementSet comparable
 merge (LWWElementSet aa ar) (LWWElementSet ba br) =
+    let
+        union a b =
+            Dict.merge
+                Dict.insert
+                (\v t1 t2 acc ->
+                    Dict.insert v
+                        (Time.millisToPosix (max (Time.posixToMillis t1) (Time.posixToMillis t2)))
+                        acc
+                )
+                Dict.insert
+                a
+                b
+                Dict.empty
+    in
     LWWElementSet
-        (aa ++ ba)
-        (ar ++ br)
+        (union aa ba)
+        (union ar br)
 
 
 toList : LWWElementSet comparable -> List comparable
@@ -55,8 +98,8 @@ toList set =
 
 toSet : LWWElementSet comparable -> Set.Set comparable
 toSet (LWWElementSet a r) =
-    List.foldl
-        (\( t, v ) acc ->
+    Dict.foldl
+        (\v t acc ->
             if member v (LWWElementSet a r) then
                 Set.insert v acc
 
@@ -70,14 +113,7 @@ toSet (LWWElementSet a r) =
 encode : LWWElementSet String -> Json.Encode.Value
 encode (LWWElementSet a r) =
     Json.Encode.list
-        (Json.Encode.list
-            (\( t, v ) ->
-                Json.Encode.list identity
-                    [ Json.Encode.int (Time.posixToMillis t)
-                    , Json.Encode.string v
-                    ]
-            )
-        )
+        (Json.Encode.dict identity (\t -> Json.Encode.int (Time.posixToMillis t)))
         [ a, r ]
 
 
@@ -87,14 +123,7 @@ decoder =
         timestamp =
             Json.Decode.int
                 |> Json.Decode.map Time.millisToPosix
-
-        gset =
-            Json.Decode.list
-                (Json.Decode.map2 Tuple.pair
-                    (Json.Decode.index 0 timestamp)
-                    (Json.Decode.index 1 Json.Decode.string)
-                )
     in
     Json.Decode.map2 LWWElementSet
-        (Json.Decode.index 0 gset)
-        (Json.Decode.index 1 gset)
+        (Json.Decode.index 0 (Json.Decode.dict timestamp))
+        (Json.Decode.index 1 (Json.Decode.dict timestamp))

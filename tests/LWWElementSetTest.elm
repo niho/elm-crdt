@@ -20,22 +20,22 @@ later =
 
 evenLater : Time.Posix
 evenLater =
-    Time.millisToPosix 1000
+    Time.millisToPosix 2000
 
 
-expectMember : comparable -> LWWElementSet comparable -> Expectation
+expectMember : String -> LWWElementSet String -> Expectation
 expectMember a set =
     if member a set then
         Expect.pass
 
     else
-        Expect.fail "not member of set"
+        Expect.fail ("'" ++ a ++ "' not member of set")
 
 
-expectNotMember : comparable -> LWWElementSet comparable -> Expectation
+expectNotMember : String -> LWWElementSet String -> Expectation
 expectNotMember a set =
     if member a set then
-        Expect.fail "not member of set"
+        Expect.fail ("'" ++ a ++ "' is member of set")
 
     else
         Expect.pass
@@ -110,10 +110,10 @@ suite =
             ]
         , describe "encode"
             [ test "empty" <|
-                \_ -> Expect.equal "[[],[]]" (Json.Encode.encode 0 (encode empty))
+                \_ -> Expect.equal "[{},{}]" (Json.Encode.encode 0 (encode empty))
             , test "concurrenct updates" <|
                 \_ ->
-                    Expect.equal "[[[0,\"a\"],[0,\"b\"]],[[1000,\"a\"]]]"
+                    Expect.equal "[{\"a\":0,\"b\":0},{\"a\":1000}]"
                         (Json.Encode.encode 0
                             (encode (remove "a" later (insert "a" now (insert "b" now empty))))
                         )
@@ -122,16 +122,10 @@ suite =
             [ test "empty" <|
                 \_ ->
                     Expect.equal (Ok empty)
-                        (Json.Decode.decodeString decoder "[[],[]]")
+                        (Json.Decode.decodeString decoder "[{},{}]")
             , test "concurrenct updates" <|
                 \_ ->
                     Expect.equal (Ok (remove "a" later (insert "a" now (insert "b" now empty))))
-                        (Json.Decode.decodeString decoder "[[[0,\"a\"],[0,\"b\"]],[[1000,\"a\"]]]")
-            , test "fail on inconsistent data" <|
-                \_ ->
-                    Expect.equal Nothing
-                        (Json.Decode.decodeString decoder "[[\"b\"],[\"a\"]]"
-                            |> Result.toMaybe
-                        )
+                        (Json.Decode.decodeString decoder "[{\"a\":0,\"b\":0},{\"a\":1000}]")
             ]
         ]
