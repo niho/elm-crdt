@@ -7,7 +7,8 @@
     "exposed-modules": [
         "CRDT.GCounter",
         "CRDT.PNCounter",
-        "CRDT.GSet"
+        "CRDT.GSet",
+        "CRDT.TwoPSet"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

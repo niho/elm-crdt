@@ -9,7 +9,7 @@ conflicts.
 ** DONE GCounter
 ** DONE PNCounter
 ** DONE GSet
-** TODO 2PSet
+** DONE 2PSet
 ** TODO LWWElementSet
 ** TODO ORSet
 ** TODO Treedoc
