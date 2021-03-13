@@ -1,0 +1,19 @@
+#+title: Introduction to CRTDs in Elm
+#+author: Niklas Holmgren
+
+* Introduction
+CRDTs are data structures that supports concurrent collaboration without
+conflicts.
+
+* Implementations
+** DONE GCounter
+** TODO PNCounter
+** TODO GSet
+** TODO 2PSet
+** TODO LWWElementSet
+** TODO ORSet
+** TODO Treedoc
+** TODO RGA
+** TODO Woot
+** TODO Logoot
+** TODO LSeq
