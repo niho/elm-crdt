@@ -7,7 +7,7 @@ conflicts.
 
 * Implementations
 ** DONE GCounter
-** TODO PNCounter
+** DONE PNCounter
 ** TODO GSet
 ** TODO 2PSet
 ** TODO LWWElementSet
