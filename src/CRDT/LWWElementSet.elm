@@ -3,6 +3,7 @@ module CRDT.LWWElementSet exposing
     , decoder
     , empty
     , encode
+    , fromList
     , insert
     , member
     , merge
@@ -89,6 +90,11 @@ merge (LWWElementSet aa ar) (LWWElementSet ba br) =
     LWWElementSet
         (union aa ba)
         (union ar br)
+
+
+fromList : List comparable -> Time.Posix -> LWWElementSet comparable
+fromList list now =
+    LWWElementSet (Dict.fromList (List.map (\v -> ( v, now )) list)) Dict.empty
 
 
 toList : LWWElementSet comparable -> List comparable

@@ -3,6 +3,7 @@ module CRDT.TwoPSet exposing
     , decoder
     , empty
     , encode
+    , fromList
     , insert
     , member
     , merge
@@ -53,6 +54,11 @@ merge (TwoPSet aa ar) (TwoPSet ba br) =
         (CRDT.GSet.merge ar br)
 
 
+fromList : List comparable -> TwoPSet comparable
+fromList list =
+    TwoPSet (CRDT.GSet.fromList list) CRDT.GSet.empty
+
+
 toList : TwoPSet comparable -> List comparable
 toList set =
     Set.toList (toSet set)
@@ -79,7 +85,7 @@ decoder =
         (Json.Decode.index 1 CRDT.GSet.decoder)
         |> Json.Decode.andThen
             (\(TwoPSet a r) ->
-                if Set.intersect (CRDT.GSet.toSet a) (CRDT.GSet.toSet r) == (CRDT.GSet.toSet r) then
+                if Set.intersect (CRDT.GSet.toSet a) (CRDT.GSet.toSet r) == CRDT.GSet.toSet r then
                     Json.Decode.succeed (TwoPSet a r)
 
                 else

@@ -3,6 +3,7 @@ module CRDT.GSet exposing
     , decoder
     , empty
     , encode
+    , fromList
     , insert
     , member
     , merge
@@ -37,6 +38,11 @@ member element (GSet set) =
 merge : GSet comparable -> GSet comparable -> GSet comparable
 merge (GSet a) (GSet b) =
     GSet (Set.union a b)
+
+
+fromList : List comparable -> GSet comparable
+fromList list =
+    GSet (Set.fromList list)
 
 
 toList : GSet comparable -> List comparable
