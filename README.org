@@ -1,5 +1,7 @@
-#+title: Introduction to CRTDs in Elm
+#+title: CRDTs in Elm
 #+author: Niklas Holmgren
+
+Elm implementations of some of the most common CRDT data structures.
 
 * Introduction
 CRDTs are data structures that supports concurrent collaboration without
@@ -11,9 +13,12 @@ conflicts.
 ** DONE GSet
 ** DONE 2PSet
 ** DONE LWWElementSet
-** TODO ORSet
+** DONE ORSet
 ** TODO Treedoc
 ** TODO RGA
 ** TODO Woot
 ** TODO Logoot
 ** TODO LSeq
+
+* References
+- [1] Shapiro, M., Preguiça, N., Baquero, C., Zawirski, M., ”A comprehensive study of Convergent and Commutative Replicated Data Types”, /Research Report/, 2011.
