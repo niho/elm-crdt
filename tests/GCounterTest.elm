@@ -13,12 +13,12 @@ suite =
         [ describe "zero"
             [ test "return counter with value set to zero" <|
                 \_ ->
-                    Expect.equal 0 (query zero)
+                    Expect.equal 0 (value zero)
             ]
         , describe "update"
             [ test "increments the counter" <|
                 \_ ->
-                    Expect.equal 1 (query (increment "test" zero))
+                    Expect.equal 1 (value (increment "test" zero))
             ]
         , describe "merge"
             [ test "commutative" <|
@@ -49,7 +49,7 @@ suite =
                     Expect.equal zero (merge zero zero)
             , test "selects max value on conflict" <|
                 \_ ->
-                    Expect.equal 1 (query (merge zero (increment "test" zero)))
+                    Expect.equal 1 (value (merge zero (increment "test" zero)))
             , test "merging of concurrent updates" <|
                 \_ ->
                     let
@@ -62,7 +62,7 @@ suite =
                         c =
                             zero
                     in
-                    Expect.equal 3 (query (merge a (merge b c)))
+                    Expect.equal 3 (value (merge a (merge b c)))
             ]
         , describe "encode"
             [ test "zero" <|

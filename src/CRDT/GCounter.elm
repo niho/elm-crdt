@@ -4,7 +4,7 @@ module CRDT.GCounter exposing
     , encode
     , increment
     , merge
-    , query
+    , value
     , zero
     )
 
@@ -25,15 +25,15 @@ zero =
 increment : comparable -> GCounter comparable -> GCounter comparable
 increment id (GCounter counter) =
     case Dict.get id counter of
-        Just value ->
-            GCounter (Dict.insert id (value + 1) counter)
+        Just val ->
+            GCounter (Dict.insert id (val + 1) counter)
 
         Nothing ->
             GCounter (Dict.insert id 1 counter)
 
 
-query : GCounter comparable -> Int
-query (GCounter counter) =
+value : GCounter comparable -> Int
+value (GCounter counter) =
     Dict.foldl (\_ x sum -> sum + x) 0 counter
 
 

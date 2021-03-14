@@ -5,7 +5,7 @@ module CRDT.PNCounter exposing
     , encode
     , increment
     , merge
-    , query
+    , value
     , zero
     )
 
@@ -33,9 +33,9 @@ decrement id (PNCounter p n) =
     PNCounter p (CRDT.GCounter.increment id n)
 
 
-query : PNCounter comparable -> Int
-query (PNCounter p n) =
-    CRDT.GCounter.query p - CRDT.GCounter.query n
+value : PNCounter comparable -> Int
+value (PNCounter p n) =
+    CRDT.GCounter.value p - CRDT.GCounter.value n
 
 
 merge : PNCounter comparable -> PNCounter comparable -> PNCounter comparable
