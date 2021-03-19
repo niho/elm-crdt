@@ -22,3 +22,4 @@ conflicts.
 
 * References
 - [1] Shapiro, M., Preguiça, N., Baquero, C., Zawirski, M., ”A comprehensive study of Convergent and Commutative Replicated Data Types”, /Research Report/, 2011.
+- [2] Nédelec B., Molli, P., Mostefaoui, A., Desmontils, E., ”LSEQ: an Adaptive Structure for Sequences in Distributed Collaborative Editing”, *DocEng '13 Proceedings of the 2013 ACM symposium on Document engineering*, ACM, New York 2013, pp. 37-46.

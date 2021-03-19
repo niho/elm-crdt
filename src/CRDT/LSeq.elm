@@ -30,7 +30,6 @@ type Strategy
 type Leaf a
     = Value ( a, Id )
     | Tombstone ( a, Id )
-    | TombstoneUnkown Id
     | Start
     | End
 
@@ -78,15 +77,15 @@ leafId leaf =
         Tombstone ( _, id ) ->
             id
 
-        TombstoneUnkown id ->
-            id
-
 
 append : a -> LSeq a -> LSeq a
 append element (LSeq seq) =
     let
         p =
-            leafId (Array.get -2 seq.sequence |> Maybe.withDefault Start)
+            leafId
+                (Array.get (Array.length seq.sequence - 2) seq.sequence
+                    |> Maybe.withDefault Start
+                )
 
         q =
             leafId End
@@ -94,61 +93,111 @@ append element (LSeq seq) =
     insert element p q (LSeq seq)
 
 
+alloc : Id -> Id -> LSeq a -> ( ( Id, Random.Seed ), List Strategy )
+alloc p q (LSeq seq) =
+    let
+        getLevel : Id -> Id -> Int -> Int -> ( Int, Int )
+        getLevel p_ q_ depth_ interval_ =
+            if List.sum interval_ < 1 && depth_ < 64 then
+                getLevel p_ q_ (depth_ + 1) (idiff (prefix q_ depth_) (prefix p_ depth_))
+
+            else
+                ( depth_, interval_ )
+
+        idiff : Id -> Id -> Id
+        idiff p_ q_ =
+            [ List.sum p_ - List.sum q_ - 1 ]
+
+        prefix id depth_ =
+            List.take depth_ id
+
+        ( depth, interval ) =
+            getInterval p q 0 0
+
+        step =
+            min seq.boundary interval
+
+        randomStrategy =
+            Random.uniform BPlus [ BMinus ]
+
+        getStrategy : Int -> Random.Seed -> List Strategy -> ( ( Strategy, Random.Seed ), List Strategy )
+        getStrategy depth_ seed s =
+            case s of
+                [] ->
+                    let
+                        ( s_, seed_ ) =
+                            Random.step randomStrategy seed
+                    in
+                    ( ( s_, seed_ ), s ++ [ s_ ] )
+
+                s_ :: rest ->
+                    if depth_ == 0 then
+                        ( ( s_, seed ), s )
+
+                    else
+                        getStrategy (depth_ - 1) seed rest
+
+        bPlus p_ depth_ step_ =
+            Random.int 0 step_
+                |> Random.map (\i -> (prefix p_ depth_) ++ [ i + 1 ])
+                |> Random.step
+
+        bMinus q_ depth_ step_ =
+            Random.int 0 step_
+                |> Random.map (\i -> (prefix q_ depth_) ++ [ i + 1 ])
+                |> Random.step
+    in
+    case getStrategy depth seq.seed seq.strategy of
+        ( ( BPlus, seed ), strategy_ ) ->
+            ( bPlus p depth step seed, strategy_ )
+
+        ( ( BMinus, seed ), strategy_ ) ->
+            ( bMinus q depth step seed, strategy_ )
+
+
 insert : a -> Id -> Id -> LSeq a -> LSeq a
 insert element p q (LSeq seq) =
     let
-        randomPath =
-            Random.int 0 99
-                |> Random.map (\i -> p ++ [ i ])
+        ( ( id, seed ), strategy ) =
+            alloc p q (LSeq seq)
 
-        alloc =
-            Random.step randomPath seq.seed
+        compareId a b =
+            case ( a, b ) of
+                ( [], [] ) ->
+                    EQ
 
-        ( id, seed ) =
-            alloc
+                ( [], h :: rest ) ->
+                    LT
 
-        splitAt idx arr =
-            ( Array.slice 0 idx arr
-            , Array.slice idx -1 arr
-            )
+                ( h :: rest, [] ) ->
+                    GT
 
-        binaryIndexOf id_ xs =
-            binsearch (Array.map leafId xs) id_ 0 (Array.length xs - 1)
+                ( h1 :: rest1, h2 :: rest2 ) ->
+                    case compare h1 h2 of
+                        EQ ->
+                            compareId rest1 rest2
 
-        binsearch xs value low high =
-            let
-                mid =
-                    low + (truncate ((high - low) / 2))
-            in
-            if high < low then
-                Nothing
+                        LT ->
+                            LT
 
-            else if mid > value then
-                binsearch xs value low (mid - 1)
+                        GT ->
+                            GT
 
-            else if mid < value then
-                binsearch xs value (mid + 1) high
+        compareLeaf a b =
+            compareId (leafId a) (leafId b)
 
-            else
-                Just mid
-
-        applyInsert xs =
-            case binaryIndexOf id xs of
-                Just index ->
-                    let
-                        ( ys, zs ) =
-                            splitAt index xs
-                    in
-                    ys |> Array.push (Value ( element, id )) |> Array.append zs
-
-                Nothing ->
-                    xs |> Array.push (Value ( element, id ))
+        applyInsert value xs =
+            xs
+                |> Array.push value
+                |> Array.toList
+                |> List.sortWith compareLeaf
+                |> Array.fromList
     in
     LSeq
         { seq
-            | sequence = applyInsert seq.sequence
+            | sequence = applyInsert (Value ( element, id )) seq.sequence
             , counter = seq.counter + 1
-            , strategy = seq.strategy
+            , strategy = strategy
             , seed = seed
         }
 
@@ -156,7 +205,7 @@ insert element p q (LSeq seq) =
 dropRight : Int -> LSeq a -> LSeq a
 dropRight n (LSeq seq) =
     if n > 0 then
-        case Array.get -1 seq.sequence of
+        case Array.get (Array.length seq.sequence - 1) seq.sequence of
             Just leaf ->
                 remove (leafId leaf) (dropRight (n - 1) (LSeq seq))
 

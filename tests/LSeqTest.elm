@@ -1,5 +1,6 @@
 module LSeqTest exposing (..)
 
+import Array
 import CRDT.LSeq exposing (..)
 import Expect
 import Random
@@ -35,10 +36,42 @@ find c seq =
             []
 
 
+compareId : Id -> Id -> Order
+compareId a b =
+    case ( a, b ) of
+        ( [], [] ) ->
+            EQ
+
+        ( [], h :: rest ) ->
+            LT
+
+        ( h :: rest, [] ) ->
+            GT
+
+        ( h1 :: rest1, h2 :: rest2 ) ->
+            case compare h1 h2 of
+                EQ ->
+                    compareId rest1 rest2
+
+                LT ->
+                    LT
+
+                GT ->
+                    GT
+
+
+applyInsert id xs =
+    xs |> Array.push id |> Array.toList |> List.sortWith compareId |> Array.fromList
+
+
 suite : Test
 suite =
     describe "LSeq"
-        [ describe "length"
+        [ skip <| describe "abc"
+            [ test "abc equals empty" <|
+                \_ -> Expect.equal emptySeq (append 'a' emptySeq)
+            ]
+        , describe "length"
             [ test "is zero for empty sequence" <|
                 \_ -> Expect.equal 0 (length emptySeq)
             , test "returns length of sequence" <|
@@ -48,7 +81,21 @@ suite =
             ]
         , describe "toList"
             [ test "elements as list" <|
-                \_ -> Expect.equal [ 'a', 'b', 'c' ] (toList abcSeq |> List.map Tuple.first)
+                \_ ->
+                    Expect.equal [ 'a', 'b', 'c' ]
+                        (toList abcSeq |> List.map Tuple.first)
+            , test "identifiers as list" <|
+                \_ ->
+                    Expect.equal [ [ 26 ], [ 28 ], [ 60 ] ]
+                        (toList abcSeq |> List.map Tuple.second)
+            , test "as list" <|
+                \_ ->
+                    Expect.equal
+                        [ ( 'a', [ 26 ] )
+                        , ( 'b', [ 28 ] )
+                        , ( 'c', [ 60 ] )
+                        ]
+                        (toList abcSeq)
             ]
         , describe "fromList"
             [ test "sequence from list" <|
@@ -72,7 +119,7 @@ suite =
         , describe "dropRight"
             [ test "removes n elements from end of sequence" <|
                 \_ ->
-                    Expect.equal emptySeq (dropRight 1 abcSeq)
+                    Expect.equal "ab" (toString (dropRight 1 abcSeq))
             ]
         , describe "remove"
             [ test "removes element at id" <|
@@ -107,5 +154,55 @@ suite =
                             )
                         )
             , todo "preserves partial order"
+            ]
+        , describe "compareId" <|
+            [ test "equal" <|
+                \_ ->
+                    Expect.all
+                        [ Expect.equal (compareId [] [])
+                        , Expect.equal (compareId [ 1 ] [ 1 ])
+                        , Expect.equal (compareId [ 1, 2 ] [ 1, 2 ])
+                        , Expect.equal (compareId [ 1, 2, 3, 4, 5 ] [ 1, 2, 3, 4, 5 ])
+                        ]
+                        EQ
+            , test "not equal" <|
+                \_ ->
+                    Expect.all
+                        [ Expect.notEqual (compareId [] [ 1 ])
+                        , Expect.notEqual (compareId [ 1 ] [ 2 ])
+                        , Expect.notEqual (compareId [ 1 ] [ 1, 2 ])
+                        , Expect.notEqual (compareId [ 1, 2 ] [ 1 ])
+                        ]
+                        EQ
+            , test "less than" <|
+                \_ ->
+                    Expect.all
+                        [ Expect.equal (compareId [ 0 ] [ 1 ])
+                        , Expect.equal (compareId [ 0 ] [ 99 ])
+                        , Expect.equal (compareId [ 1 ] [ 1, 2 ])
+                        , Expect.equal (compareId [ 2, 1 ] [ 3 ])
+                        , Expect.equal (compareId [ 2, 3, 4, 5 ] [ 2, 3, 4, 5, 0 ])
+                        , Expect.equal (compareId [ 42, 6 ] [ 98, 7, 38, 5, 9, 68 ])
+                        , Expect.equal (compareId [ 0, 53 ] [ 99, 12 ])
+                        ]
+                        LT
+            , test "greater than" <|
+                \_ ->
+                    Expect.all
+                        [ Expect.equal (compareId [ 1 ] [ 0 ])
+                        , Expect.equal (compareId [ 99 ] [ 0 ])
+                        , Expect.equal (compareId [ 1, 2 ] [ 1 ])
+                        , Expect.equal (compareId [ 2 ] [ 1, 9 ])
+                        , Expect.equal (compareId [ 2, 3, 4, 5, 0 ] [ 2, 3, 4, 5 ])
+                        , Expect.equal (compareId [ 98, 7, 38, 5, 9, 68 ] [ 42, 6 ])
+                        , Expect.equal (compareId [ 99, 12 ] [ 0, 53, 26 ])
+                        ]
+                        GT
+            ]
+        , describe "applyInsert"
+            [ test "x" <|
+                \_ ->
+                    Expect.equal (Array.fromList [ [ 0 ], [ 2 ], [ 26 ], [ 99 ] ])
+                        (applyInsert [ 26 ] (Array.fromList [ [ 0 ], [ 2 ], [ 99 ] ]))
             ]
         ]
