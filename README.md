@@ -16,17 +16,17 @@ and (typically) idempotent.
 
 This library currently implements two basic abstract data types: counters and sets.
 The data types come in several different flavours depending on the specific
-use case needed (and space/time complexity of the underlying data struecture).
+use case needed (and space/time complexity of the underlying data structure).
 
 ## Counters
 - **GCounter**: A counter that can only increment.
-- **PNCounter**: A counter that can both increment and decrement.
+- **PNCounter**: A counter that can be both incremented and decremented.
 
 ## Sets
 - **GSet**: A set that can be only added to.
-- **TwoPSet**: A set that supports both insert and remove (with concurrent removals taking precendence over inserts).
-- **ORSet**: A set that supports both insert and remove (with concurrent inserts taking precendence over removal).
-- **LWWElementSet**: A set that supports both insert and remove (with the latest concurrent operation taking precendence).
+- **TwoPSet**: A set that supports both insert and remove (with concurrent removals taking precedence over inserts).
+- **ORSet**: A set that supports both insert and remove (with concurrent inserts taking precedence over removal).
+- **LWWElementSet**: A set that supports both insert and remove (with the latest concurrent operation taking precedence).
 
 ## License
 
