@@ -6,8 +6,10 @@
     "version": "1.0.0",
     "exposed-modules": [
         "CRDT.GCounter",
-        "CRDT.PNCounter",
         "CRDT.GSet",
+        "CRDT.LWWElementSet",
+        "CRDT.ORSet",
+        "CRDT.PNCounter",
         "CRDT.TwoPSet"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",

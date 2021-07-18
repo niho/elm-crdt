@@ -19,7 +19,7 @@ module CRDT.LWWElementSet exposing
 
 # LWWElementSet
 
-@docs LWWElementSet, empty, insert, remove, member, merge
+@docs LWWElementSet, empty, insert, remove, member, merge, fromList, toList, toSet
 
 # Operations
 

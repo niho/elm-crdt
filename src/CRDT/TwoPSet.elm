@@ -19,7 +19,7 @@ module CRDT.TwoPSet exposing
 
 # TwoPSet
 
-@docs TwoPSet, empty, insert, remove, member, merge
+@docs TwoPSet, empty, insert, remove, member, merge, fromList, toList, toSet
 
 # Operations
 

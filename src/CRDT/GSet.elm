@@ -18,7 +18,7 @@ module CRDT.GSet exposing
 
 # GSet
 
-@docs GSet, empty, insert, member, merge
+@docs GSet, empty, insert, member, merge, fromList, toList, toSet
 
 # Operations
 

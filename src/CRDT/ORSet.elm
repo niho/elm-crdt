@@ -20,7 +20,7 @@ module CRDT.ORSet exposing
 
 # ORSet
 
-@docs Replica, ORSet, empty, insert, remove, member, merge
+@docs Replica, ORSet, empty, insert, remove, member, merge, fromList, toList, toSet
 
 # Operations
 
