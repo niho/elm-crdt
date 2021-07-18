@@ -1,6 +1,5 @@
 module CRDT.LSeq exposing
-    ( Id
-    , LSeq
+    ( LSeq
     , append
     , dropRight
     , empty
@@ -15,16 +14,8 @@ module CRDT.LSeq exposing
     )
 
 import Array
+import CRDT.LSeq.Position exposing (..)
 import Random
-
-
-type alias Id =
-    List Int
-
-
-type Strategy
-    = BPlus
-    | BMinus
 
 
 type Leaf a
@@ -32,6 +23,11 @@ type Leaf a
     | Tombstone ( a, Id )
     | Start
     | End
+
+
+type Strategy
+    = BPlus
+    | BMinus
 
 
 type LSeq a
@@ -52,7 +48,7 @@ empty seed =
         , strategy = []
         , boundary = 10
         , counter = 0
-        , base = 3
+        , base = 16
         , seed = seed
         }
 
@@ -62,17 +58,19 @@ length seq =
     List.length (toList seq)
 
 
-leafId : Leaf a -> Id
-leafId leaf =
+leafId : Int -> Leaf a -> Id
+leafId base leaf =
     case leaf of
         Value ( _, id ) ->
             id
 
         Start ->
-            [ 0 ]
+            --Id 0 0
+            minId
 
         End ->
-            [ 99 ]
+            --Id ((base * (2 ^ 1)) - 1) 0
+            maxId
 
         Tombstone ( _, id ) ->
             id
@@ -82,13 +80,13 @@ append : a -> LSeq a -> LSeq a
 append element (LSeq seq) =
     let
         p =
-            leafId
+            leafId seq.base
                 (Array.get (Array.length seq.sequence - 2) seq.sequence
                     |> Maybe.withDefault Start
                 )
 
         q =
-            leafId End
+            leafId seq.base End
     in
     insert element p q (LSeq seq)
 
@@ -96,23 +94,28 @@ append element (LSeq seq) =
 alloc : Id -> Id -> LSeq a -> ( ( Id, Random.Seed ), List Strategy )
 alloc p q (LSeq seq) =
     let
-        getLevel : Id -> Id -> Int -> Int -> ( Int, Int )
-        getLevel p_ q_ depth_ interval_ =
-            if List.sum interval_ < 1 && depth_ < 64 then
-                getLevel p_ q_ (depth_ + 1) (idiff (prefix q_ depth_) (prefix p_ depth_))
+        getInterval p_ q_ depth_ interval_ =
+            if interval_ < 1 then
+                if Debug.log "depth" depth_ > 64 then
+                    Debug.log "infinite loop"
+                        ( depth_, interval_ )
+
+                else
+                    getInterval p_
+                        q_
+                        (depth_ + 1)
+                        (Debug.log "interval" <| diff p_ q_ depth_ - 1)
+                {- ((Debug.log "q-prefix" <| prefix q_ depth_ seq.base)
+                       - (Debug.log "p-prefix" <| prefix p_ depth_ seq.base)
+                       - 1
+                   )
+                -}
 
             else
-                ( depth_, interval_ )
-
-        idiff : Id -> Id -> Id
-        idiff p_ q_ =
-            [ List.sum p_ - List.sum q_ - 1 ]
-
-        prefix id depth_ =
-            List.take depth_ id
+                Debug.log "result" ( depth_ - 1, interval_ )
 
         ( depth, interval ) =
-            getInterval p q 0 0
+            getInterval (Debug.log "p" p) (Debug.log "q" q) 1 0
 
         step =
             min seq.boundary interval
@@ -120,7 +123,6 @@ alloc p q (LSeq seq) =
         randomStrategy =
             Random.uniform BPlus [ BMinus ]
 
-        getStrategy : Int -> Random.Seed -> List Strategy -> ( ( Strategy, Random.Seed ), List Strategy )
         getStrategy depth_ seed s =
             case s of
                 [] ->
@@ -139,12 +141,12 @@ alloc p q (LSeq seq) =
 
         bPlus p_ depth_ step_ =
             Random.int 0 step_
-                |> Random.map (\i -> (prefix p_ depth_) ++ [ i + 1 ])
+                |> Random.map (\i -> add ( p_, depth_ ) (i + 1))
                 |> Random.step
 
         bMinus q_ depth_ step_ =
             Random.int 0 step_
-                |> Random.map (\i -> (prefix q_ depth_) ++ [ i + 1 ])
+                |> Random.map (\i -> sub ( q_, depth_ ) (i + 1))
                 |> Random.step
     in
     case getStrategy depth seq.seed seq.strategy of
@@ -159,36 +161,19 @@ insert : a -> Id -> Id -> LSeq a -> LSeq a
 insert element p q (LSeq seq) =
     let
         ( ( id, seed ), strategy ) =
-            alloc p q (LSeq seq)
+            Debug.log "alloc" <| alloc p q (LSeq seq)
 
-        compareId a b =
-            case ( a, b ) of
-                ( [], [] ) ->
-                    EQ
-
-                ( [], h :: rest ) ->
-                    LT
-
-                ( h :: rest, [] ) ->
-                    GT
-
-                ( h1 :: rest1, h2 :: rest2 ) ->
-                    case compare h1 h2 of
-                        EQ ->
-                            compareId rest1 rest2
-
-                        LT ->
-                            LT
-
-                        GT ->
-                            GT
-
+        {- compareId (Id a l1) (Id b l2) =
+           compare
+               (Debug.log "a" <| prefix a (max l1 l2) seq.base)
+               (Debug.log "b" <| prefix b (max l1 l2) seq.base)
+        -}
         compareLeaf a b =
-            compareId (leafId a) (leafId b)
+            compareId (leafId seq.base a) (leafId seq.base b)
 
         applyInsert value xs =
             xs
-                |> Array.push value
+                |> Array.push (Debug.log "value" value)
                 |> Array.toList
                 |> List.sortWith compareLeaf
                 |> Array.fromList
@@ -207,7 +192,7 @@ dropRight n (LSeq seq) =
     if n > 0 then
         case Array.get (Array.length seq.sequence - 1) seq.sequence of
             Just leaf ->
-                remove (leafId leaf) (dropRight (n - 1) (LSeq seq))
+                remove (leafId seq.base leaf) (dropRight (n - 1) (LSeq seq))
 
             Nothing ->
                 LSeq seq
