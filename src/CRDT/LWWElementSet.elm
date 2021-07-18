@@ -1,6 +1,6 @@
 module CRDT.LWWElementSet exposing
     ( LWWElementSet
-    , Op(..)
+    , Operation(..)
     , apply
     , decoder
     , empty
@@ -23,7 +23,7 @@ module CRDT.LWWElementSet exposing
 
 # Operations
 
-@docs Op, apply, patch
+@docs Operation, apply, patch
 
 # Serialization
 
@@ -46,7 +46,7 @@ type LWWElementSet comparable
 
 {-| Operations that will modify the state of the set.
 -}
-type Op comparable
+type Operation comparable
     = Insert comparable Time.Posix
     | Remove comparable Time.Posix
 
@@ -132,7 +132,7 @@ merge (LWWElementSet aa ar) (LWWElementSet ba br) =
 
 {-| Apply an operation on a LWWElementSet.
 -}
-apply : Op comparable -> LWWElementSet comparable -> LWWElementSet comparable
+apply : Operation comparable -> LWWElementSet comparable -> LWWElementSet comparable
 apply op set =
     case op of
         Insert element time ->
@@ -144,7 +144,7 @@ apply op set =
 
 {-|  Apply a list of operations (a patch) on a LWWElementSet.
 -}
-patch : List (Op comparable) -> LWWElementSet comparable -> LWWElementSet comparable
+patch : List (Operation comparable) -> LWWElementSet comparable -> LWWElementSet comparable
 patch ops set =
     List.foldl apply set ops
 

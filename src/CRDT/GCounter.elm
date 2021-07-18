@@ -1,7 +1,7 @@
 module CRDT.GCounter exposing
     ( GCounter
     , Replica
-    , Op(..)
+    , Operation(..)
     , apply
     , decoder
     , encode
@@ -20,7 +20,7 @@ module CRDT.GCounter exposing
 
 # Operations
 
-@docs Ops, apply, patch
+@docs Operation, apply, patch
 
 # Serialization
 
@@ -46,7 +46,7 @@ type GCounter
 
 {-| Operations that will modify the state of the counter. A GCounter only supports a single operation (Increment).
 -}
-type Op
+type Operation
     = Increment Replica
 
 
@@ -93,7 +93,7 @@ merge (GCounter a) (GCounter b) =
 
 {-| Apply an operation on a GCounter.
 -}
-apply : Op -> GCounter -> GCounter
+apply : Operation -> GCounter -> GCounter
 apply op counter =
     case op of
         Increment id ->
@@ -102,7 +102,7 @@ apply op counter =
 
 {-| Apply a list of operations (a patch) on a GCounter.
 -}
-patch : List Op -> GCounter -> GCounter
+patch : List Operation -> GCounter -> GCounter
 patch ops counter =
     List.foldl apply counter ops
 

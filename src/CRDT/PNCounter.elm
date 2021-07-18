@@ -1,7 +1,7 @@
 module CRDT.PNCounter exposing
     ( PNCounter
     , Replica
-    , Op(..)
+    , Operation(..)
     , apply
     , decoder
     , decrement
@@ -21,7 +21,7 @@ module CRDT.PNCounter exposing
 
 # Operations
 
-@docs Op, apply, patch
+@docs Operation, apply, patch
 
 # Serialization
 
@@ -47,7 +47,7 @@ type PNCounter
 
 {-| Operations that will modify the state of the counter.
 -}
-type Op
+type Operation
     = Increment Replica
     | Decrement Replica
 
@@ -91,7 +91,7 @@ merge (PNCounter ap an) (PNCounter bp bn) =
 
 {-| Apply an operation on a PNCounter.
 -}
-apply : Op -> PNCounter -> PNCounter
+apply : Operation -> PNCounter -> PNCounter
 apply op counter =
     case op of
         Increment id ->
@@ -103,7 +103,7 @@ apply op counter =
 
 {-| Apply a list of operations (a patch) on a PNCounter.
 -}
-patch : List Op -> PNCounter -> PNCounter
+patch : List Operation -> PNCounter -> PNCounter
 patch ops counter =
     List.foldl apply counter ops
 

@@ -1,6 +1,6 @@
 module CRDT.GSet exposing
     ( GSet
-    , Op(..)
+    , Operation(..)
     , apply
     , decoder
     , empty
@@ -22,7 +22,7 @@ module CRDT.GSet exposing
 
 # Operations
 
-@docs Op, apply, patch
+@docs Operation, apply, patch
 
 # Serialization
 
@@ -43,7 +43,7 @@ type GSet comparable
 
 {-| Operations that will modify the state of the set.
 -}
-type Op comparable
+type Operation comparable
     = Insert comparable
 
 
@@ -77,7 +77,7 @@ merge (GSet a) (GSet b) =
 
 {-| Apply an operation on a GSet.
 -}
-apply : Op comparable -> GSet comparable -> GSet comparable
+apply : Operation comparable -> GSet comparable -> GSet comparable
 apply op set =
     case op of
         Insert element ->
@@ -86,7 +86,7 @@ apply op set =
 
 {-|  Apply a list of operations (a patch) on a GSet.
 -}
-patch : List (Op comparable) -> GSet comparable -> GSet comparable
+patch : List (Operation comparable) -> GSet comparable -> GSet comparable
 patch ops counter =
     List.foldl apply counter ops
 

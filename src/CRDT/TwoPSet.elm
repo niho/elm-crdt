@@ -1,6 +1,6 @@
 module CRDT.TwoPSet exposing
     ( TwoPSet
-    , Op(..)
+    , Operation(..)
     , apply
     , decoder
     , empty
@@ -23,7 +23,7 @@ module CRDT.TwoPSet exposing
 
 # Operations
 
-@docs Op, apply, patch
+@docs Operation, apply, patch
 
 # Serialization
 
@@ -45,7 +45,7 @@ type TwoPSet comparable
 
 {-| Operations that will modify the state of the set.
 -}
-type Op comparable
+type Operation comparable
     = Insert comparable
     | Remove comparable
 
@@ -94,7 +94,7 @@ merge (TwoPSet aa ar) (TwoPSet ba br) =
 
 {-| Apply an operation on a TwoPSet.
 -}
-apply : Op comparable -> TwoPSet comparable -> TwoPSet comparable
+apply : Operation comparable -> TwoPSet comparable -> TwoPSet comparable
 apply op set =
     case op of
         Insert element ->
@@ -106,7 +106,7 @@ apply op set =
 
 {-|  Apply a list of operations (a patch) on a TwoPSet.
 -}
-patch : List (Op comparable) -> TwoPSet comparable -> TwoPSet comparable
+patch : List (Operation comparable) -> TwoPSet comparable -> TwoPSet comparable
 patch ops set =
     List.foldl apply set ops
 

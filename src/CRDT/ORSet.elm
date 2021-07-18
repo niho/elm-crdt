@@ -1,7 +1,7 @@
 module CRDT.ORSet exposing
     ( ORSet
     , Replica
-    , Op(..)
+    , Operation(..)
     , apply
     , decoder
     , empty
@@ -24,7 +24,7 @@ module CRDT.ORSet exposing
 
 # Operations
 
-@docs Op, apply, patch
+@docs Operation, apply, patch
 
 # Serialization
 
@@ -57,7 +57,7 @@ type ORSet comparable
 
 {-| Operations that will modify the state of the set.
 -}
-type Op comparable
+type Operation comparable
     = Insert comparable Replica
     | Remove comparable
 
@@ -134,7 +134,7 @@ merge (ORSet aa ar) (ORSet ba br) =
 
 {-| Apply an operation on an ORSet.
 -}
-apply : Op comparable -> ORSet comparable -> ORSet comparable
+apply : Operation comparable -> ORSet comparable -> ORSet comparable
 apply op set =
     case op of
         Insert element tag ->
@@ -146,7 +146,7 @@ apply op set =
 
 {-|  Apply a list of operations (a patch) on an ORSet.
 -}
-patch : List (Op comparable) -> ORSet comparable -> ORSet comparable
+patch : List (Operation comparable) -> ORSet comparable -> ORSet comparable
 patch ops set =
     List.foldl apply set ops
 
