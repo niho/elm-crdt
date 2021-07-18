@@ -83,28 +83,33 @@ suite =
             ]
         , describe "encode"
             [ test "empty" <|
-                \_ -> Expect.equal "[[],[]]" (Json.Encode.encode 0 (encode empty))
+                \_ ->
+                  Expect.equal "[[],[]]" (Json.Encode.encode 0
+                                              (encode Json.Encode.string empty))
             , test "concurrenct updates" <|
                 \_ ->
                     Expect.equal "[[\"a\",\"b\"],[\"a\"]]"
                         (Json.Encode.encode 0
-                            (encode (remove "a" (insert "a" (insert "b" empty))))
+                            (encode Json.Encode.string
+                                 (remove "a" (insert "a" (insert "b" empty))))
                         )
             ]
         , describe "decode"
             [ test "empty" <|
                 \_ ->
                     Expect.equal (Ok empty)
-                        (Json.Decode.decodeString decoder "[[],[]]")
+                        (Json.Decode.decodeString (decoder Json.Decode.string) "[[],[]]")
             , test "concurrenct updates" <|
                 \_ ->
                     Expect.equal (Ok (remove "a" (insert "a" (insert "b" empty))))
-                        (Json.Decode.decodeString decoder "[[\"a\",\"b\"],[\"a\"]]")
+                        (Json.Decode.decodeString (decoder Json.Decode.string)
+                             "[[\"a\",\"b\"],[\"a\"]]")
             , test "fail on inconsistent data" <|
                 \_ ->
                     Expect.equal Nothing
-                        (Json.Decode.decodeString decoder "[[\"b\"],[\"a\"]]"
-                            |> Result.toMaybe
+                        (Json.Decode.decodeString (decoder Json.Decode.string)
+                             "[[\"b\"],[\"a\"]]"
+                        |> Result.toMaybe
                         )
             ]
         ]

@@ -74,13 +74,13 @@ toSet (GSet set) =
     set
 
 
-encode : GSet String -> Json.Encode.Value
-encode (GSet set) =
-    Json.Encode.set Json.Encode.string set
+encode : (comparable -> Json.Encode.Value) -> GSet comparable -> Json.Encode.Value
+encode encoder (GSet set) =
+    Json.Encode.set encoder set
 
 
-decoder : Json.Decode.Decoder (GSet String)
-decoder =
-    Json.Decode.list Json.Decode.string
+decoder : Json.Decode.Decoder comparable -> Json.Decode.Decoder (GSet comparable)
+decoder decode =
+    Json.Decode.list decode
         |> Json.Decode.map Set.fromList
         |> Json.Decode.map GSet

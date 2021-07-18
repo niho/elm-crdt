@@ -92,20 +92,18 @@ toSet (TwoPSet a r) =
     Set.diff (CRDT.GSet.toSet a) (CRDT.GSet.toSet r)
 
 
-encode : TwoPSet String -> Json.Encode.Value
-encode (TwoPSet a r) =
+encode : (comparable -> Json.Encode.Value) -> TwoPSet comparable -> Json.Encode.Value
+encode encoder (TwoPSet a r) =
     Json.Encode.list
-        (Json.Encode.set Json.Encode.string)
-        [ CRDT.GSet.toSet a
-        , CRDT.GSet.toSet r
-        ]
+        (CRDT.GSet.encode encoder)
+        [ a, r ]
 
 
-decoder : Json.Decode.Decoder (TwoPSet String)
-decoder =
+decoder : Json.Decode.Decoder comparable -> Json.Decode.Decoder (TwoPSet comparable)
+decoder decode =
     Json.Decode.map2 TwoPSet
-        (Json.Decode.index 0 CRDT.GSet.decoder)
-        (Json.Decode.index 1 CRDT.GSet.decoder)
+        (Json.Decode.index 0 (CRDT.GSet.decoder decode))
+        (Json.Decode.index 1 (CRDT.GSet.decoder decode))
         |> Json.Decode.andThen
             (\(TwoPSet a r) ->
                 if Set.intersect (CRDT.GSet.toSet a) (CRDT.GSet.toSet r) == CRDT.GSet.toSet r then

@@ -68,22 +68,23 @@ suite =
             ]
         , describe "encode"
             [ test "empty" <|
-                \_ -> Expect.equal "[]" (Json.Encode.encode 0 (encode empty))
+                \_ ->
+                  Expect.equal "[]" (Json.Encode.encode 0 (encode Json.Encode.string empty))
             , test "concurrenct updates" <|
                 \_ ->
                     Expect.equal "[\"a\",\"b\"]"
                         (Json.Encode.encode 0
-                            (encode (insert "a" (insert "b" empty)))
+                            (encode Json.Encode.string (insert "a" (insert "b" empty)))
                         )
             ]
         , describe "decode"
             [ test "empty" <|
                 \_ ->
                     Expect.equal (Ok empty)
-                        (Json.Decode.decodeString decoder "[]")
+                        (Json.Decode.decodeString (decoder Json.Decode.string) "[]")
             , test "concurrenct updates" <|
                 \_ ->
                     Expect.equal (Ok (insert "a" (insert "b" empty)))
-                        (Json.Decode.decodeString decoder "[\"a\",\"b\"]")
+                        (Json.Decode.decodeString (decoder Json.Decode.string) "[\"a\",\"b\"]")
             ]
         ]
