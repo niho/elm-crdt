@@ -1,5 +1,6 @@
 module CRDT.PNCounter exposing
     ( PNCounter
+    , Replica
     , Op(..)
     , apply
     , decoder
@@ -17,43 +18,47 @@ import Json.Decode
 import Json.Encode
 
 
-type PNCounter comparable
-    = PNCounter (GCounter comparable) (GCounter comparable)
+type alias Replica =
+    CRDT.GCounter.Replica
 
 
-type Op comparable
-    = Increment comparable
-    | Decrement comparable
+type PNCounter
+    = PNCounter GCounter GCounter
 
 
-zero : PNCounter comparable
+type Op
+    = Increment Replica
+    | Decrement Replica
+
+
+zero : PNCounter
 zero =
     PNCounter CRDT.GCounter.zero CRDT.GCounter.zero
 
 
-increment : comparable -> PNCounter comparable -> PNCounter comparable
+increment : Replica -> PNCounter -> PNCounter
 increment id (PNCounter p n) =
     PNCounter (CRDT.GCounter.increment id p) n
 
 
-decrement : comparable -> PNCounter comparable -> PNCounter comparable
+decrement : Replica -> PNCounter -> PNCounter
 decrement id (PNCounter p n) =
     PNCounter p (CRDT.GCounter.increment id n)
 
 
-value : PNCounter comparable -> Int
+value : PNCounter -> Int
 value (PNCounter p n) =
     CRDT.GCounter.value p - CRDT.GCounter.value n
 
 
-merge : PNCounter comparable -> PNCounter comparable -> PNCounter comparable
+merge : PNCounter -> PNCounter -> PNCounter
 merge (PNCounter ap an) (PNCounter bp bn) =
     PNCounter
         (CRDT.GCounter.merge ap bp)
         (CRDT.GCounter.merge an bn)
 
 
-apply : Op comparable -> PNCounter comparable -> PNCounter comparable
+apply : Op -> PNCounter -> PNCounter
 apply op counter =
     case op of
         Increment id ->
@@ -63,17 +68,17 @@ apply op counter =
             decrement id counter
 
 
-patch : List (Op comparable) -> PNCounter comparable -> PNCounter comparable
+patch : List Op -> PNCounter -> PNCounter
 patch ops counter =
     List.foldl apply counter ops
 
 
-encode : PNCounter String -> Json.Encode.Value
+encode : PNCounter -> Json.Encode.Value
 encode (PNCounter p n) =
     Json.Encode.list CRDT.GCounter.encode [ p, n ]
 
 
-decoder : Json.Decode.Decoder (PNCounter String)
+decoder : Json.Decode.Decoder PNCounter
 decoder =
     Json.Decode.map2 PNCounter
         (Json.Decode.index 0 CRDT.GCounter.decoder)
