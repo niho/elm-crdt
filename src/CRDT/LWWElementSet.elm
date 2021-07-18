@@ -15,6 +15,22 @@ module CRDT.LWWElementSet exposing
     , patch
     )
 
+{-| An LWWElementSet (or Last-Write-Wins Element Set) is a set where each insert and remove operation is tagged with a timestamp and if an insert and remove occurs concurrently on two separate replicas, the operation with the latest timestamp will take precendence.
+
+# LWWElementSet
+
+@docs LWWElementSet, empty, insert, remove, member, merge
+
+# Operations
+
+@docs Op, apply, patch
+
+# Serialization
+
+@docs encode, decoder
+
+-}
+
 import Dict
 import Json.Decode
 import Json.Encode
@@ -22,15 +38,21 @@ import Set
 import Time
 
 
+{-| LWWElementSet state.
+-}
 type LWWElementSet comparable
     = LWWElementSet (Dict.Dict comparable Time.Posix) (Dict.Dict comparable Time.Posix)
 
 
+{-| Operations that will modify the state of the set.
+-}
 type Op comparable
     = Insert comparable Time.Posix
     | Remove comparable Time.Posix
 
 
+{-| Constructor that creates a new empty GSet.
+-}
 empty : LWWElementSet comparable
 empty =
     LWWElementSet Dict.empty Dict.empty
@@ -53,16 +75,22 @@ update element now =
         )
 
 
+{-| Insert a value in the set.
+-}
 insert : comparable -> Time.Posix -> LWWElementSet comparable -> LWWElementSet comparable
 insert element now (LWWElementSet a r) =
     LWWElementSet (update element now a) r
 
 
+{-| Remove a value from the set.
+-}
 remove : comparable -> Time.Posix -> LWWElementSet comparable -> LWWElementSet comparable
 remove element now (LWWElementSet a r) =
     LWWElementSet a (update element now r)
 
 
+{-| Determine if a value is in the set.
+-}
 member : comparable -> LWWElementSet comparable -> Bool
 member element (LWWElementSet a r) =
     case ( Dict.get element a, Dict.get element r ) of
@@ -79,6 +107,8 @@ member element (LWWElementSet a r) =
             False
 
 
+{-| Merge two LWWElementSet states.
+-}
 merge : LWWElementSet comparable -> LWWElementSet comparable -> LWWElementSet comparable
 merge (LWWElementSet aa ar) (LWWElementSet ba br) =
     let
@@ -100,6 +130,8 @@ merge (LWWElementSet aa ar) (LWWElementSet ba br) =
         (union ar br)
 
 
+{-| Apply an operation on a LWWElementSet.
+-}
 apply : Op comparable -> LWWElementSet comparable -> LWWElementSet comparable
 apply op set =
     case op of
@@ -110,21 +142,29 @@ apply op set =
             remove element time set
 
 
+{-|  Apply a list of operations (a patch) on a LWWElementSet.
+-}
 patch : List (Op comparable) -> LWWElementSet comparable -> LWWElementSet comparable
 patch ops set =
     List.foldl apply set ops
 
 
+{-| Convert a list of values into a LWWElementSet.
+-}
 fromList : List comparable -> Time.Posix -> LWWElementSet comparable
 fromList list now =
     LWWElementSet (Dict.fromList (List.map (\v -> ( v, now )) list)) Dict.empty
 
 
+{-| Convert a LWWElementSet to a list of values.
+-}
 toList : LWWElementSet comparable -> List comparable
 toList set =
     Set.toList (toSet set)
 
 
+{-| Convert a LWWElementSet to a Set.
+-}
 toSet : LWWElementSet comparable -> Set.Set comparable
 toSet (LWWElementSet a r) =
     Dict.foldl
@@ -139,6 +179,8 @@ toSet (LWWElementSet a r) =
         a
 
 
+{-| Encode a LWWElementSet as JSON.
+-}
 encode : LWWElementSet String -> Json.Encode.Value
 encode (LWWElementSet a r) =
     Json.Encode.list
@@ -146,6 +188,8 @@ encode (LWWElementSet a r) =
         [ a, r ]
 
 
+{-| Decode a LWWElementSet from JSON.
+-}
 decoder : Json.Decode.Decoder (LWWElementSet String)
 decoder =
     let
