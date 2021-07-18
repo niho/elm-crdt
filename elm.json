@@ -2,7 +2,7 @@
     "type": "package",
     "name": "niho/elm-crdt",
     "summary": "Implementations of some common CRDTs in Elm.",
-    "license": "MIT",
+    "license": "GPL-3.0",
     "version": "1.0.0",
     "exposed-modules": [
         "CRDT.GCounter",

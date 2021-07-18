@@ -27,3 +27,9 @@ use case needed (and space/time complexity of the underlying data struecture).
 - **TwoPSet**: A set that supports both insert and remove (with concurrent removals taking precendence over inserts).
 - **ORSet**: A set that supports both insert and remove (with concurrent inserts taking precendence over removal).
 - **LWWElementSet**: A set that supports both insert and remove (with the latest concurrent operation taking precendence).
+
+## License
+
+This library is licensed under the GNU General Public Licence v3 (GPLv3).
+
+Copyright (C) 2021 Niklas Holmgren Holding AB.
