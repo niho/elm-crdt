@@ -64,6 +64,18 @@ suite =
                     in
                     Expect.equal 3 (value (merge a (merge b c)))
             ]
+        , describe "apply"
+            [ test "increment operation" <|
+                  \_ -> Expect.equal 1 (value (apply (Increment "test") zero))
+            ]
+        , describe "patch"
+            [ test "apply list of operations" <|
+                  \_ -> Expect.equal 2 (value (patch
+                                                   [ Increment "test"
+                                                   , Increment "test"
+                                                   ]
+                                                   zero))
+            ]
         , describe "encode"
             [ test "zero" <|
                 \_ -> Expect.equal "{}" (Json.Encode.encode 0 (encode zero))

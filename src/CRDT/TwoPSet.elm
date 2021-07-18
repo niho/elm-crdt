@@ -1,5 +1,7 @@
 module CRDT.TwoPSet exposing
     ( TwoPSet
+    , Op(..)
+    , apply
     , decoder
     , empty
     , encode
@@ -10,6 +12,7 @@ module CRDT.TwoPSet exposing
     , remove
     , toList
     , toSet
+    , patch
     )
 
 import CRDT.GSet exposing (GSet)
@@ -20,6 +23,11 @@ import Set
 
 type TwoPSet comparable
     = TwoPSet (GSet comparable) (GSet comparable)
+
+
+type Op comparable
+    = Insert comparable
+    | Remove comparable
 
 
 empty : TwoPSet comparable
@@ -52,6 +60,21 @@ merge (TwoPSet aa ar) (TwoPSet ba br) =
     TwoPSet
         (CRDT.GSet.merge aa ba)
         (CRDT.GSet.merge ar br)
+
+
+apply : Op comparable -> TwoPSet comparable -> TwoPSet comparable
+apply op set =
+    case op of
+        Insert element ->
+            insert element set
+
+        Remove element ->
+            remove element set
+
+
+patch : List (Op comparable) -> TwoPSet comparable -> TwoPSet comparable
+patch ops set =
+    List.foldl apply set ops
 
 
 fromList : List comparable -> TwoPSet comparable

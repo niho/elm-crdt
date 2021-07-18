@@ -1,5 +1,7 @@
 module CRDT.GSet exposing
     ( GSet
+    , Op(..)
+    , apply
     , decoder
     , empty
     , encode
@@ -9,6 +11,7 @@ module CRDT.GSet exposing
     , merge
     , toList
     , toSet
+    , patch
     )
 
 import Json.Decode
@@ -18,6 +21,10 @@ import Set
 
 type GSet comparable
     = GSet (Set.Set comparable)
+
+
+type Op comparable
+    = Insert comparable
 
 
 empty : GSet comparable
@@ -38,6 +45,18 @@ member element (GSet set) =
 merge : GSet comparable -> GSet comparable -> GSet comparable
 merge (GSet a) (GSet b) =
     GSet (Set.union a b)
+
+
+apply : Op comparable -> GSet comparable -> GSet comparable
+apply op set =
+    case op of
+        Insert element ->
+            insert element set
+
+
+patch : List (Op comparable) -> GSet comparable -> GSet comparable
+patch ops counter =
+    List.foldl apply counter ops
 
 
 fromList : List comparable -> GSet comparable

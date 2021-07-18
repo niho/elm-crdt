@@ -1,5 +1,7 @@
 module CRDT.LWWElementSet exposing
     ( LWWElementSet
+    , Op(..)
+    , apply
     , decoder
     , empty
     , encode
@@ -10,6 +12,7 @@ module CRDT.LWWElementSet exposing
     , remove
     , toList
     , toSet
+    , patch
     )
 
 import Dict
@@ -21,6 +24,11 @@ import Time
 
 type LWWElementSet comparable
     = LWWElementSet (Dict.Dict comparable Time.Posix) (Dict.Dict comparable Time.Posix)
+
+
+type Op comparable
+    = Insert comparable Time.Posix
+    | Remove comparable Time.Posix
 
 
 empty : LWWElementSet comparable
@@ -90,6 +98,21 @@ merge (LWWElementSet aa ar) (LWWElementSet ba br) =
     LWWElementSet
         (union aa ba)
         (union ar br)
+
+
+apply : Op comparable -> LWWElementSet comparable -> LWWElementSet comparable
+apply op set =
+    case op of
+        Insert element time ->
+            insert element time set
+
+        Remove element time ->
+            remove element time set
+
+
+patch : List (Op comparable) -> LWWElementSet comparable -> LWWElementSet comparable
+patch ops set =
+    List.foldl apply set ops
 
 
 fromList : List comparable -> Time.Posix -> LWWElementSet comparable

@@ -1,6 +1,8 @@
 module CRDT.ORSet exposing
     ( ORSet
     , Replica
+    , Op(..)
+    , apply
     , decoder
     , empty
     , encode
@@ -11,6 +13,7 @@ module CRDT.ORSet exposing
     , remove
     , toList
     , toSet
+    , patch
     )
 
 import Dict
@@ -30,6 +33,11 @@ type alias Tags =
 
 type ORSet comparable
     = ORSet (Dict.Dict comparable Tags) (Dict.Dict comparable Tags)
+
+
+type Op comparable
+    = Insert comparable Replica
+    | Remove comparable
 
 
 empty : ORSet comparable
@@ -67,7 +75,7 @@ member element (ORSet a r) =
             False
 
         ( Just t1, Just t2 ) ->
-            Set.diff t1 t2 |> Set.isEmpty
+            Set.diff t1 t2 |> Set.isEmpty |> not
 
         ( Nothing, Nothing ) ->
             False
@@ -90,6 +98,21 @@ merge (ORSet aa ar) (ORSet ba br) =
     ORSet
         (union aa ba)
         (union ar br)
+
+
+apply : Op comparable -> ORSet comparable -> ORSet comparable
+apply op set =
+    case op of
+        Insert element tag ->
+            insert element tag set
+
+        Remove element ->
+            remove element set
+
+
+patch : List (Op comparable) -> ORSet comparable -> ORSet comparable
+patch ops set =
+    List.foldl apply set ops
 
 
 fromList : List comparable -> String -> ORSet comparable

@@ -1,5 +1,7 @@
 module CRDT.PNCounter exposing
     ( PNCounter
+    , Op(..)
+    , apply
     , decoder
     , decrement
     , encode
@@ -7,6 +9,7 @@ module CRDT.PNCounter exposing
     , merge
     , value
     , zero
+    , patch
     )
 
 import CRDT.GCounter exposing (GCounter)
@@ -16,6 +19,11 @@ import Json.Encode
 
 type PNCounter comparable
     = PNCounter (GCounter comparable) (GCounter comparable)
+
+
+type Op comparable
+    = Increment comparable
+    | Decrement comparable
 
 
 zero : PNCounter comparable
@@ -43,6 +51,21 @@ merge (PNCounter ap an) (PNCounter bp bn) =
     PNCounter
         (CRDT.GCounter.merge ap bp)
         (CRDT.GCounter.merge an bn)
+
+
+apply : Op comparable -> PNCounter comparable -> PNCounter comparable
+apply op counter =
+    case op of
+        Increment id ->
+            increment id counter
+
+        Decrement id ->
+            decrement id counter
+
+
+patch : List (Op comparable) -> PNCounter comparable -> PNCounter comparable
+patch ops counter =
+    List.foldl apply counter ops
 
 
 encode : PNCounter String -> Json.Encode.Value

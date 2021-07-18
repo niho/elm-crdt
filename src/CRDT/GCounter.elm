@@ -1,11 +1,14 @@
 module CRDT.GCounter exposing
     ( GCounter
+    , Op(..)
+    , apply
     , decoder
     , encode
     , increment
     , merge
     , value
     , zero
+    , patch
     )
 
 import Dict exposing (Dict)
@@ -15,6 +18,10 @@ import Json.Encode
 
 type GCounter comparable
     = GCounter (Dict comparable Int)
+
+
+type Op comparable
+    = Increment comparable
 
 
 zero : GCounter comparable
@@ -48,6 +55,18 @@ merge (GCounter a) (GCounter b) =
             b
             Dict.empty
         )
+
+
+apply : Op comparable -> GCounter comparable -> GCounter comparable
+apply op counter =
+    case op of
+        Increment id ->
+            increment id counter
+
+
+patch : List (Op comparable) -> GCounter comparable -> GCounter comparable
+patch ops counter =
+    List.foldl apply counter ops
 
 
 encode : GCounter String -> Json.Encode.Value

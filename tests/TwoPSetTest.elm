@@ -58,6 +58,29 @@ suite =
                     in
                     Expect.equal [ "b", "c" ] (toList (merge a (merge b c)))
             ]
+        , describe "apply"
+            [  test "insert operation" <|
+                  \_ -> Expect.equal [ 1 ] (toList (apply (Insert 1) empty))
+            , test "remove operation" <|
+                  \_ -> Expect.equal [ 1, 3 ]
+                         (empty
+                         |> apply (Insert 1)
+                         |> apply (Insert 2)
+                         |> apply (Remove 2)
+                         |> apply (Insert 3)
+                         |> toList
+                         )
+            ]
+        , describe "patch"
+            [ test "apply list of operations" <|
+                  \_ -> Expect.equal [ 1, 3 ] (toList (patch
+                                                           [ Insert 1
+                                                           , Insert 2
+                                                           , Remove 2
+                                                           , Insert 3
+                                                           ]
+                                                           empty))
+            ]
         , describe "encode"
             [ test "empty" <|
                 \_ -> Expect.equal "[[],[]]" (Json.Encode.encode 0 (encode empty))

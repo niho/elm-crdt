@@ -8,19 +8,19 @@ import Test exposing (Test, describe, test)
 import Time
 
 
-expectMember : String -> ORSet String -> Expectation
+expectMember : comparable -> ORSet comparable -> Expectation
 expectMember a set =
     if member a set then
         Expect.pass
 
     else
-        Expect.fail ("'" ++ a ++ "' not member of set")
+        Expect.fail ("'" ++ (Debug.toString a) ++ "' not member of set")
 
 
-expectNotMember : String -> ORSet String -> Expectation
+expectNotMember : comparable -> ORSet comparable -> Expectation
 expectNotMember a set =
     if member a set then
-        Expect.fail ("'" ++ a ++ "' is member of set")
+        Expect.fail ("'" ++ (Debug.toString a) ++ "' is member of set")
 
     else
         Expect.pass
@@ -29,15 +29,32 @@ expectNotMember a set =
 suite : Test
 suite =
     describe "ORSet"
-        [ describe "merge"
+        [ describe "member"
+              [ test "added is member" <|
+                    \_ ->
+                        Expect.equal True (member 1 (insert 1 "a" empty))
+              , test "never added is not member" <|
+                    \_ ->
+                        Expect.equal False (member 2 (insert 1 "a" empty))
+              , test "removed is not member" <|
+                    \_ ->
+                        Expect.equal False
+                            (empty
+                            |> insert 1 "a"
+                            |> insert 1 "b"
+                            |> remove 1
+                            |> member 1
+                            )
+              ]
+        , describe "merge"
             [ test "commutative" <|
                 \_ ->
                     let
                         a =
-                            remove "a" (insert "a" "1" empty)
+                            remove 1 (insert 2 "a" (insert 1 "a" empty))
 
                         b =
-                            remove "b" (insert "b" "1" empty)
+                            remove 1 (insert 1 "b" (insert 2 "b" empty))
                     in
                     Expect.equal
                         (toSet (merge a b))
@@ -46,13 +63,13 @@ suite =
                 \_ ->
                     let
                         a =
-                            remove "a" (insert "a" "1" empty)
+                            insert 1 "a" empty
 
                         b =
-                            remove "b" (insert "b" "1" empty)
+                            remove 2 (insert 2 "b" empty)
 
                         c =
-                            remove "c" (insert "c" "1" empty)
+                            remove 3 (insert 4 "c" (insert 3 "c" empty))
                     in
                     Expect.equal
                         (toSet (merge a (merge b c)))
@@ -61,52 +78,83 @@ suite =
                 \_ ->
                     let
                         a =
-                            remove "a" (insert "a" "1" empty)
+                            remove 1 (insert 2 "a" (insert 1 "a" empty))
                     in
                     Expect.equal (toSet a) (toSet (merge a a))
-            , test "merging of replicas" <|
+            , test "add wins" <|
                 \_ ->
-                    Expect.equal [ "a" ]
+                    Expect.equal [ 1, 2, 3 ]
                         (toList
                             (merge
-                                (insert "a" "1" empty)
-                                (insert "a" "2" empty)
+                                (insert 3 "a" (remove 2 (insert 2 "a" (insert 1 "a" empty))))
+                                (insert 2 "b" (insert 1 "b" empty))
                             )
                         )
-            , test "merging of concurrent updates" <|
+            , test "remove" <|
                 \_ ->
-                    let
-                        a =
-                            insert "b" "1" (insert "a" "1" empty)
-
-                        b =
-                            remove "c" (insert "c" "2" (insert "b" "2" empty))
-
-                        c =
-                            insert "a" "3" (insert "b" "3" (insert "c" "3" empty))
-                    in
-                    Expect.all
-                        [ expectMember "a"
-                        , expectMember "b"
-                        , expectNotMember "c"
-                        , \set -> set |> toList |> Expect.equal [ "a", "b" ]
-                        ]
-                        (merge a (merge b c))
+                    Expect.equal [ 2 ]
+                        (toList
+                            (merge
+                                (remove 1 (insert 1 "b" (insert 1 "a" empty)))
+                                (insert 2 "b" (insert 1 "b" empty))
+                            )
+                        )
+            , test "remove converges" <|
+                \_ ->
+                    Expect.equal [ 2 ]
+                        (toList
+                            (merge
+                                (remove 1 (insert 1 "a" empty))
+                                (remove 1 (insert 2 "b" (insert 1 "b" empty)))
+                            )
+                        )
+            , test "local remove" <|
+                \_ ->
+                    Expect.equal [ 2 ]
+                        (toList
+                            (merge
+                                (remove 1 (insert 2 "b" (insert 1 "a" empty)))
+                                (insert 2 "b" empty)
+                            )
+                        )
+            ]
+        , describe "apply"
+            [ test "insert operation" <|
+                  \_ -> Expect.equal [ 1 ] (toList (apply (Insert 1 "a") empty))
+            , test "remove operation" <|
+                  \_ -> Expect.equal [ 1, 3 ]
+                         (empty
+                         |> apply (Insert 1 "a")
+                         |> apply (Insert 2 "b")
+                         |> apply (Remove 2)
+                         |> apply (Insert 3 "c")
+                         |> toList
+                         )
+            ]
+        , describe "patch"
+            [ test "apply list of operations" <|
+                  \_ -> Expect.equal [ 1, 3 ] (toList (patch
+                                                           [ Insert 1 "a"
+                                                           , Insert 2 "b"
+                                                           , Remove 2
+                                                           , Insert 3 "c"
+                                                           ]
+                                                           empty))
             ]
         , describe "encode"
             [ test "empty" <|
                 \_ -> Expect.equal "[{},{}]" (Json.Encode.encode 0 (encode empty))
             , test "concurrenct updates" <|
                 \_ ->
-                    Expect.equal "[{\"a\":[\"1\"],\"b\":[\"1\",\"2\"]},{\"a\":[\"1\"]}]"
+                    Expect.equal "[{\"1\":[\"a\"],\"2\":[\"a\",\"b\"]},{\"1\":[\"a\"]}]"
                         (Json.Encode.encode 0
                             (encode
-                                (remove "a"
-                                    (insert "a"
-                                        "1"
-                                        (insert "b"
-                                            "2"
-                                            (insert "b" "1" empty)
+                                (remove "1"
+                                    (insert "1"
+                                        "a"
+                                        (insert "2"
+                                            "b"
+                                            (insert "2" "a" empty)
                                         )
                                     )
                                 )
@@ -122,18 +170,18 @@ suite =
                 \_ ->
                     Expect.equal
                         (Ok
-                            (remove "a"
-                                (insert "a"
-                                    "1"
-                                    (insert "b"
-                                        "2"
-                                        (insert "b" "1" empty)
+                            (remove "1"
+                                (insert "1"
+                                    "a"
+                                    (insert "2"
+                                        "b"
+                                        (insert "2" "a" empty)
                                     )
                                 )
                             )
                         )
                         (Json.Decode.decodeString decoder
-                            "[{\"a\":[\"1\"],\"b\":[\"1\",\"2\"]},{\"a\":[\"1\"]}]"
+                            "[{\"1\":[\"a\"],\"2\":[\"a\",\"b\"]},{\"1\":[\"a\"]}]"
                         )
             ]
         ]
