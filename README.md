@@ -14,9 +14,10 @@ state, or by applying atomic operations that updates the CRDT incrementally.
 Either way, the updates are guaranteed to always be commutative, associative
 and (typically) idempotent.
 
-This library currently implements two basic abstract data types: counters and sets.
-The data types come in several different flavours depending on the specific
-use case needed (and space/time complexity of the underlying data structure).
+This library currently implements three basic abstract data types: counters,
+sets and sequences. The data types come in several different flavours depending
+on the specific use case needed (and space/time complexity of the underlying
+data structure).
 
 ## Counters
 - **GCounter**: A counter that can only increment.
@@ -28,8 +29,11 @@ use case needed (and space/time complexity of the underlying data structure).
 - **ORSet**: A set that supports both insert and remove (with concurrent inserts taking precedence over removal).
 - **LWWElementSet**: A set that supports both insert and remove (with the latest concurrent operation taking precedence).
 
+## Sequences
+- **RGA**: Replicated Growable Array, a good general purpose sequence type.
+
 ## License
 
-This library is licensed under the GNU General Public Licence v3 (GPLv3).
+This library is licensed under the **GNU General Public Licence v3 (GPLv3)**.
 
 Copyright (C) 2021 Niklas Holmgren Holding AB.
